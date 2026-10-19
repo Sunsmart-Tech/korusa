@@ -7,9 +7,6 @@ import {
   Mail,
   Lock,
   ArrowRight,
-  Chrome,
-  Apple,
-  ShieldAlert,
   X,
   CheckCircle2,
   Zap,
@@ -25,14 +22,13 @@ import { BackButton } from '../../ui/BackButton';
 import { useUIStore } from '../../../store/uiStore';
 import { KorusaIcon } from '../../shared/Logo';
 import { supabase } from '../../../lib/supabase';
+import { MIN_PASSWORD_LENGTH } from '../../../lib/authConstant';
 
 type AuthView =
   | 'welcome'
   | 'login'
   | 'signup'
-  | 'forgot-password'
-  | 'otp'
-  | 'recovery';
+  | 'forgot-password';
 
 interface AuthUIProps {
   onClose?: () => void;
@@ -57,6 +53,7 @@ export const AuthUI = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme, setAuthenticated, setShowAuthModal } =
@@ -97,7 +94,9 @@ export const AuthUI = ({
   const handleLogin = async () => {
     setErrorMessage('');
 
-    if (!email || !password) {
+    const cleanEmail = email.trim();
+
+    if (!cleanEmail || !password) {
       setErrorMessage('Email and password are required.');
       return;
     }
@@ -122,19 +121,33 @@ export const AuthUI = ({
   const handleSignup = async () => {
     setErrorMessage('');
 
-    if (!fullName || !email || !password) {
+    const cleanName = fullName.trim();
+    const cleanEmail = email.trim();
+
+    if (!cleanName || !cleanEmail || !password) {
       setErrorMessage('Full name, email, and password are required.');
+      return;
+    }
+
+    // Early feedback only; Supabase enforces its own rule on the server too.
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setErrorMessage(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setErrorMessage('Please accept the Terms of Service and Privacy Policy.');
       return;
     }
 
     setAuthLoading(true);
 
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: cleanEmail,
       password,
       options: {
         data: {
-          full_name: fullName,
+          full_name: cleanName,
         },
       },
     });
@@ -157,14 +170,16 @@ export const AuthUI = ({
   const handleResetPassword = async () => {
     setErrorMessage('');
 
-    if (!resetEmail) {
+    const cleanEmail = resetEmail.trim();
+
+    if (!cleanEmail) {
       setErrorMessage('Email is required.');
       return;
     }
 
     setAuthLoading(true);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
       redirectTo: window.location.origin,
     });
 
@@ -661,25 +676,14 @@ export const AuthUI = ({
                       {authLoading ? 'Signing In...' : 'Sign In'}
                     </Button>
 
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center text-sun-border">
-                        <div className="w-full border-t border-sun-border" />
-                      </div>
-                      <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold">
-                        <span className="bg-sun-surface px-4 text-sun-text-muted">
-                          Or continue with
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
+                    {/*<div className="grid grid-cols-2 gap-4">
                       <Button variant="secondary" className="w-full !rounded-2xl" icon={<Chrome size={18} />}>
                         Google
                       </Button>
                       <Button variant="secondary" className="w-full !rounded-2xl" icon={<Apple size={18} />}>
                         Apple
                       </Button>
-                    </div>
+                    </div>*/} {/* to be brought back when the providers are configured */}
 
                     <p className="text-center text-sm text-sun-text-muted mt-6">
                       Don&apos;t have an account?{' '}
@@ -745,6 +749,8 @@ export const AuthUI = ({
                       <div className="flex items-center gap-2 px-1">
                         <input
                           type="checkbox"
+                          checked={acceptedTerms}
+                          onChange={(e) => setAcceptedTerms(e.target.checked)}
                           className="rounded border-sun-border bg-sun-surface text-sun-primary w-4 h-4"
                         />
                         <p className="text-[10px] text-sun-text-muted font-medium">
@@ -822,90 +828,6 @@ export const AuthUI = ({
                     >
                       Back to Login
                     </button>
-                  </motion.div>
-                )}
-
-                {view === 'otp' && (
-                  <motion.div
-                    key="otp"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="glass-card p-8 sm:p-10 rounded-[3rem] space-y-8 relative"
-                  >
-                    <div className="absolute top-8 left-8">
-                      <BackButton onClick={() => handleSetView('forgot-password')} label="" className="!p-0" />
-                    </div>
-
-                    <div className="space-y-2 text-center pt-8">
-                      <div className="mx-auto w-16 h-16 bg-sun-primary/10 rounded-3xl flex items-center justify-center text-sun-primary mb-4">
-                        <ShieldAlert size={32} />
-                      </div>
-                      <h2 className="text-2xl font-bold font-display">Verify Identity</h2>
-                      <p className="text-sun-text-muted text-sm leading-relaxed">
-                        We&apos;ve sent a code to your registered node address.
-                      </p>
-                    </div>
-
-                    <div className="flex justify-between gap-3">
-                      {[1, 2, 3, 4].map((i) => (
-                        <input
-                          key={i}
-                          type="text"
-                          maxLength={1}
-                          className="w-full aspect-square text-center text-2xl font-bold bg-sun-surface border border-sun-border rounded-2xl focus:border-sun-primary focus:ring-1 focus:ring-sun-primary outline-none transition-all"
-                        />
-                      ))}
-                    </div>
-
-                    <div className="space-y-4">
-                      <Button className="w-full" size="lg" onClick={() => handleSetView('recovery')}>
-                        Verify Code
-                      </Button>
-                      <button className="w-full text-[10px] font-bold text-sun-text-muted hover:text-sun-primary transition-colors uppercase tracking-widest text-center">
-                        Resend Code (45s)
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {view === 'recovery' && (
-                  <motion.div
-                    key="recovery"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="glass-card p-8 sm:p-10 rounded-[3rem] space-y-6 relative"
-                  >
-                    <div className="absolute top-8 left-8">
-                      <BackButton onClick={() => handleSetView('otp')} label="" className="!p-0" />
-                    </div>
-
-                    <div className="space-y-2 text-center pt-8">
-                      <h2 className="text-2xl font-bold font-display">New Password</h2>
-                      <p className="text-sun-text-muted text-sm leading-relaxed">
-                        Secure your account with a strong new access key.
-                      </p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <Input
-                        label="New Password"
-                        type="password"
-                        placeholder="••••••••"
-                        icon={<Lock size={18} />}
-                      />
-                      <Input
-                        label="Confirm Password"
-                        type="password"
-                        placeholder="••••••••"
-                        icon={<Lock size={18} />}
-                      />
-                    </div>
-
-                    <Button className="w-full" size="lg" onClick={() => handleSetView('login')}>
-                      Update Password
-                    </Button>
                   </motion.div>
                 )}
               </AnimatePresence>

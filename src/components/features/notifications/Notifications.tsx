@@ -217,7 +217,7 @@ export const NotificationsView = ({ onBack, onExploreClick }: { onBack?: () => v
               variant="secondary"
               onClick={() => void markAllRead()}
               disabled={unreadNotifications === 0}
-              className="!rounded-2xl px-4 py-2 text-[10px] font-black uppercase tracking-widest"
+              className="rounded-2xl! px-4 py-2 text-[10px] font-black uppercase tracking-widest"
             >
               Mark all as read
             </Button>

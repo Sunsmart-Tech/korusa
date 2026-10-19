@@ -18,6 +18,7 @@ import { LandingView } from './components/features/auth/LandingView';
 import { ProtectedRoute } from './components/features/auth/ProtectedRoute';
 import { PublicRoute } from './components/auth/RouteGuard';
 import { useUIStore } from './store/uiStore';
+import { ResetPasswordView } from './components/features/auth/ResetPasswordView';
 
 import { ExploreView } from './components/features/content/Explore';
 import { SparksView } from './components/features/content/Sparks';
@@ -45,6 +46,10 @@ export default function App() {
 
   const navigate = useNavigate();
   const [authReady, setAuthReady] = useState(false);
+
+  // True while the user is inside a password-recovery session (opened the emailed
+  // reset link). Takes priority over normal routing until they set a new password.
+  const [isRecovering, setIsRecovering] = useState(false);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -79,6 +84,9 @@ export default function App() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!isMounted) return;
 
+      // The reset link signs the user in, so without this flag they would be sent
+      // straight to /home and never be asked for a new password.
+      if (_event === 'PASSWORD_RECOVERY') setIsRecovering(true);
       setAuthenticated(!!session);
       setAuthReady(true);
     });
@@ -119,6 +127,11 @@ export default function App() {
         </div>
       </div>
     );
+  }
+
+  // Recovery takes over the whole screen until the new password is saved.
+  if (isRecovering) {
+    return <ResetPasswordView onDone={() => { setIsRecovering(false); navigate('/home'); }} />
   }
 
   return (

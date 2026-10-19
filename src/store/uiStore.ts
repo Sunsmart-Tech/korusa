@@ -1,5 +1,14 @@
 import { create } from 'zustand';
 
+interface RecentPost {
+  [key: string]: unknown;
+}
+
+interface CartItem {
+  id: string;
+  [key: string]: unknown;
+}
+
 interface UIState {
   // Auth
   isAuthenticated: boolean;
@@ -24,12 +33,12 @@ interface UIState {
   setUnreadNotifications: (value: number) => void;
 
   // Content
-  recentPosts: any[];
-  addRecentPost: (post: any) => void;
+  recentPosts: RecentPost[];
+  addRecentPost: (post: RecentPost) => void;
 
   // Cart
-  cart: any[];
-  addToCart: (item: any) => void;
+  cart: CartItem[];
+  addToCart: (item: CartItem) => void;
   removeFromCart: (itemId: string) => void;
   clearCart: () => void;
 
@@ -41,48 +50,48 @@ interface UIState {
 export const useUIStore = create<UIState>((set) => ({
   // Auth - Default to false as requested for "Auth state (isLoggedIn true/false)"
   isAuthenticated: false,
-  setAuthenticated: (value) => set({ isAuthenticated: value }),
+  setAuthenticated: (value: boolean) => set({ isAuthenticated: value }),
   
   // Theme - Default to light
   isDarkMode: false,
-  toggleTheme: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
+  toggleTheme: () => set((state: UIState) => ({ isDarkMode: !state.isDarkMode })),
   
   // Sidebar
   isSidebarOpen: false,
-  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
-  setSidebarOpen: (value) => set({ isSidebarOpen: value }),
+  toggleSidebar: () => set((state: UIState) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  setSidebarOpen: (value: boolean) => set({ isSidebarOpen: value }),
   
   // Modals
   showAuthModal: false,
-  setShowAuthModal: (value) => set({ showAuthModal: value }),
+  setShowAuthModal: (value: boolean) => set({ showAuthModal: value }),
 
   // Notifications
   unreadNotifications: 0,
-  setUnreadNotifications: (value) => set({ unreadNotifications: Math.max(0, value) }),
+  setUnreadNotifications: (value: number) => set({ unreadNotifications: Math.max(0, value) }),
 
   // Content
   recentPosts: [],
-  addRecentPost: (post) => set((state) => ({ 
+  addRecentPost: (post: RecentPost) => set((state) => ({ 
     recentPosts: [post, ...state.recentPosts] 
   })),
 
   // Cart
   cart: [],
-  addToCart: (item) => set((state) => {
+  addToCart: (item: CartItem) => set((state) => {
     // Avoid duplicates
-    if (state.cart.some(i => i.id === item.id)) {
+    if (state.cart.some((i) => i.id === item.id)) {
       return {};
     }
     return { cart: [...state.cart, item] };
   }),
-  removeFromCart: (itemId) => set((state) => ({
-    cart: state.cart.filter(i => i.id !== itemId)
+  removeFromCart: (itemId: string) => set((state) => ({
+    cart: state.cart.filter((i) => i.id !== itemId)
   })),
   clearCart: () => set({ cart: [] }),
 
   // Enrolled Courses (unlocked on checkout)
   enrolledCourses: [],
-  enrollInCourses: (courseIds) => set((state) => ({
+  enrollInCourses: (courseIds: string[]) => set((state) => ({
     enrolledCourses: Array.from(new Set([...state.enrolledCourses, ...courseIds]))
   })),
 }));

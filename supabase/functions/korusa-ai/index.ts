@@ -16,6 +16,12 @@ const instructions: Record<string, string> = {
   search: 'Answer the search question using only the supplied conversation context. Say when the answer is not present.',
 };
 
+/* Deno declaration to avoid unforseen bugs in future implementation */
+declare const Deno: {
+  env: { get(name: string): string | undefined };
+  serve(handler: (request: Request) => Response | Promise<Response>): void;
+};
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
