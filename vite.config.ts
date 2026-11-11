@@ -16,7 +16,27 @@ export default defineConfig(({ mode }) => {
       emptyOutDir: true,
       rollupOptions: {
         output: {
-          manualChunks: undefined,
+          manualChunks(id) {
+            const modulePath = id.replace(/\\/g, '/');
+
+            if (!modulePath.includes('/node_modules/')) return;
+            if (/\/node_modules\/(react|react-dom|scheduler)\//.test(modulePath)) {
+              return 'react-vendor';
+            }
+            if (/\/node_modules\/(react-router|react-router-dom)\//.test(modulePath)) {
+              return 'router-vendor';
+            }
+            if (modulePath.includes('/node_modules/@supabase/')) return 'supabase-vendor';
+            if (modulePath.includes('/node_modules/lucide-react/')) return 'icons-vendor';
+            if (
+              modulePath.includes('/node_modules/recharts/')
+              || modulePath.includes('/node_modules/victory-vendor/')
+              || /\/node_modules\/d3-[^/]+\//.test(modulePath)
+            ) {
+              return 'charts-vendor';
+            }
+            if (modulePath.includes('/node_modules/')) return 'vendor';
+          },
         },
       },
     },
